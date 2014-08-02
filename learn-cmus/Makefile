@@ -1,30 +1,33 @@
 VERSION = 0.1
-CC = gcc
-LD = gcc
+#CC = gcc
+#LD = gcc
 
-all: learn
+CC = clang
+LD = clang
 
-include lib.mk
-
-CFLAGS = -g -O2 -Wall -DHAVE_CONFIG -DREALTIME_SCHEDULING -DVERSION=\"$(VERSION)\" -D_REENTRANT
+CFLAGS  = -g -O2 -Wall -DHAVE_CONFIG -DREALTIME_SCHEDULING -DVERSION=\"$(VERSION)\" -D_REENTRANT
 LDFLAGS =  -ldl -lpthread -lm -lncurses
 
 main.o server.o: CFLAGS += -DDEFAULT_PORT=3000
 
-TEST = $(wildcard *test*.c)
-testobj = $(TEST:.c=.o)
+SRC_LEARN = $(wildcard *learn*.c)
+OBJ_LEARN = $(SRC_LEARN:.c=.o)
+BIN_LEARN = $(SRC_LEARN:.c=)
 
-SRC = $(filter-out $(TEST), $(wildcard *.c))
+SRC = $(filter-out $(SRC_LEARN), $(wildcard *.c))
 obj = $(SRC:.c=.o)
 
+all: $(BIN_LEARN)
+
+include lib.mk
 
 learn : $(obj)
 	$(call cmd,ld,$(LDFLAGS))
 
-file_test: file_test.o file.o xmalloc.o
+file_learn: file_learn.o file.o xmalloc.o
 	$(call cmd,ld,$(LDFLAGS))
 
-path_test: path_test.o path.o xmalloc.o
+path_learn: path_learn.o path.o xmalloc.o
 	$(call cmd,ld,$(LDFLAGS))
 
 worker_learn: worker_learn.o worker.o xmalloc.o locking.o debug.o prog.o
@@ -33,7 +36,6 @@ worker_learn: worker_learn.o worker.o xmalloc.o locking.o debug.o prog.o
 list_mergesort_learn: list_mergesort_learn.o xmalloc.o mergesort.o
 	$(call cmd,ld,$(LDFLAGS))
 
-tabexp_file_test: tabexp_file_test.o 
+clean += $(obj) $(OBJ_LEARN)
 
-clean += $(obj) $(testobj)
-.PHONY: all target realclean clean
+.PHONY: all realclean clean
