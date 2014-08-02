@@ -233,6 +233,8 @@ static int http_write(int fd, const char *buf, int count, int timeout_ms)
 		int rc;
 
 		d_print("timeout=%lld s %lld us\n", (long long)tv.tv_sec, (long long)tv.tv_usec);
+        d_print("---req---\n%s\n---end---\n", buf);
+        printf("---req---\n%s\n---end---\n", buf);
 
 		FD_ZERO(&wfds);
 		FD_SET(fd, &wfds);
@@ -406,6 +408,9 @@ int http_get(struct http_get *hg, struct keyval *headers, int timeout_ms)
 	rc = http_read_response(hg->fd, &buf, timeout_ms);
 	if (rc)
 		goto out;
+
+    d_print("---rsp---\n%s---end---\n", buf.buffer);
+    printf("---rsp---\n%s---end---\n", buf.buffer);
 
 	rc = http_parse_response(buf.buffer, hg);
 out:

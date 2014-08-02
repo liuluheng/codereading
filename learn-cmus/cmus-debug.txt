@@ -1,2 +1,30 @@
-TIMER: worker job:           0.000032
-TIMER: worker job:           0.000004
+do_http_get: http://www.taobao.com/
+http_open: connecting. timeout=5 s 0 us
+http_open: connecting. timeout=4 s 995535 us
+http_write: timeout=5 s 0 us
+http_write: ---req---
+GET / HTTP/1.0
+Host: www.taobao.com
+User-Agent: cmus/0.1
+Icy-MetaData: 1
+
+
+---end---
+http_get: ---rsp---
+HTTP/1.1 200 OK
+Server: Tengine
+Date: Sat, 02 Aug 2014 11:43:44 GMT
+Content-Type: text/html; charset=gbk
+Connection: close
+Vary: Accept-Encoding
+Expires: Sat, 02 Aug 2014 12:43:44 GMT
+Cache-Control: max-age=3600
+---end---
+do_http_get: HTTP response: 200 OK
+do_http_get:   Server: Tengine
+do_http_get:   Date: Sat, 02 Aug 2014 11:43:44 GMT
+do_http_get:   Content-Type: text/html; charset=gbk
+do_http_get:   Connection: close
+do_http_get:   Vary: Accept-Encoding
+do_http_get:   Expires: Sat, 02 Aug 2014 12:43:44 GMT
+do_http_get:   Cache-Control: max-age=3600

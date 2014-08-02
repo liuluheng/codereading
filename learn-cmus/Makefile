@@ -36,6 +36,10 @@ worker_learn: worker_learn.o worker.o xmalloc.o locking.o debug.o prog.o
 list_mergesort_learn: list_mergesort_learn.o xmalloc.o mergesort.o
 	$(call cmd,ld,$(LDFLAGS))
 
+http_learn: http_learn.o xmalloc.o debug.o http.o keyval.o gbuf.o file.o prog.o
+	$(call cmd,ld,$(LDFLAGS))
+
 clean += $(obj) $(OBJ_LEARN)
+distclean += $(BIN_LEARN)
 
 .PHONY: all realclean clean

@@ -35,6 +35,10 @@ import ycm_core
 # compilation database set (by default, one is not set).
 # CHANGE THIS LIST OF FLAGS. YES, THIS IS THE DROID YOU HAVE BEEN LOOKING FOR.
 flags = [
+'-DHAVE_CONFIG',
+'-DREALTIME_SCHEDULING',
+'-DVERSION="0.1"',
+'-D_REENTRANT'
 '-Wall',
 '-Wextra',
 #'-Werror',

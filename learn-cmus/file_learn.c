@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include "file.h"
 
-char *program_name;
+char *program_name = NULL;
 
 int print(void *data, const char *line)
 {
-    printf("%s\n", line);
+    printf("%s%s\n", data, line);
     return 0;
 }
 
@@ -13,9 +13,11 @@ int main(int argc, char *argv[])
 {
     program_name = argv[0];
 
-    file_for_each_line("file.h", print, NULL);
+    char *p = "prompt> ";
 
-    print(NULL, argv[0]);
+    file_for_each_line("file.h", print, p);
+
+    print(p, argv[0]);
 
     return 0;
 }
