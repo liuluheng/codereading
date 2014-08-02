@@ -8,7 +8,6 @@ char *program_name = "list_mergesort_learn.c";
 
 struct list {
     struct list_head node;
-
     int val;
 };
 
@@ -43,13 +42,14 @@ int main(void)
 
     list_mergesort(&sort_list, compare);
 
-    list_for_each_entry(list_ptr, &sort_list, node) {
+    struct list *list_ptr2;
+    list_for_each_entry_safe(list_ptr, list_ptr2, &sort_list, node) {
+        list_del(&list_ptr->node);
         printf("%d ", list_ptr->val);
+        /* free */
+        free(list_ptr);
     }
     printf("\n");
-
-
-    /* TODO free */
 
     return 0;
 }
