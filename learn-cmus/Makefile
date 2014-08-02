@@ -30,6 +30,9 @@ path_test: path_test.o path.o xmalloc.o
 worker_learn: worker_learn.o worker.o xmalloc.o locking.o debug.o prog.o
 	$(call cmd,ld,$(LDFLAGS))
 
+list_mergesort_learn: list_mergesort_learn.o xmalloc.o mergesort.o
+	$(call cmd,ld,$(LDFLAGS))
+
 tabexp_file_test: tabexp_file_test.o 
 
 clean += $(obj) $(testobj)
