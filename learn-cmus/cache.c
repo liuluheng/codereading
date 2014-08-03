@@ -415,7 +415,7 @@ struct track_info *cache_get_ti(const char *filename, int force)
 
 			ti->duration = 0;
 		} else {
-		       	ti = ip_get_ti(filename);
+            ti = ip_get_ti(filename);
 		}
 		if (!ti)
 			return NULL;
