@@ -26,4 +26,6 @@
 *.pyc
 *.txt
 
+# Lemon
 *.pdf
+lemon
