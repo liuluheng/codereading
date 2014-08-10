@@ -1,5 +1,28 @@
+/*
+ * Copyright 2008-2013 Various Authors
+ * Copyright 2004-2005 Timo Hirvonen
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include "http.h"
+#include "file.h"
+#include "debug.h"
+#include "xmalloc.h"
+#include "gbuf.h"
+
 #include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/types.h>
@@ -12,32 +35,19 @@
 #include <string.h>
 #include <errno.h>
 
-
-struct http_uri {
-    char *uri;
-    char *user;
-    char *pass;
-    char *host;
-    char *path;
-    int port;
-};
-
-struct http_get {
-    struct http_uri uri;
-    struct http_uri *proxy;
-    int fd;
-    char *reason;
-    int code;
-};
-
-void http_free_uri(struct http_uri *u);
-
+/*
+ * @uri is http://[user[:pass]@]host[:port][/path][?query]
+ *
+ * uri(7): If the URL supplies a user  name  but no  password, and the remote
+ * server requests a password, the program interpreting the URL should request
+ * one from the user.
+ */
 int http_parse_uri(const char *uri, struct http_uri *u)
 {
 	const char *str, *colon, *at, *slash, *host_start;
 
 	/* initialize all fields */
-	u->uri  = strdup(uri);
+	u->uri  = xstrdup(uri);
 	u->user = NULL;
 	u->pass = NULL;
 	u->host = NULL;
@@ -52,9 +62,9 @@ int http_parse_uri(const char *uri, struct http_uri *u)
 	/* [/path] */
 	slash = strchr(str, '/');
 	if (slash) {
-		u->path = strdup(slash);
+		u->path = xstrdup(slash);
 	} else {
-		u->path = strdup("/");
+		u->path = xstrdup("/");
 	}
 
 	/* [user[:pass]@] */
@@ -65,11 +75,11 @@ int http_parse_uri(const char *uri, struct http_uri *u)
 		colon = strchr(str, ':');
 		if (colon == NULL || colon > at) {
 			/* user */
-			u->user = strndup(str, at - str);
+			u->user = xstrndup(str, at - str);
 		} else {
 			/* user:pass */
-			u->user = strndup(str, colon - str);
-			u->pass = strndup(colon + 1, at - (colon + 1));
+			u->user = xstrndup(str, colon - str);
+			u->pass = xstrndup(colon + 1, at - (colon + 1));
 		}
 	}
 
@@ -80,7 +90,7 @@ int http_parse_uri(const char *uri, struct http_uri *u)
 		const char *start;
 		int port;
 
-		u->host = strndup(host_start, colon - host_start);
+		u->host = xstrndup(host_start, colon - host_start);
 		colon++;
 		start = colon;
 
@@ -99,9 +109,9 @@ int http_parse_uri(const char *uri, struct http_uri *u)
 	} else {
 		/* host */
 		if (slash) {
-			u->host = strndup(host_start, slash - host_start);
+			u->host = xstrndup(host_start, slash - host_start);
 		} else {
-			u->host = strdup(host_start);
+			u->host = xstrdup(host_start);
 		}
 	}
 	return 0;
@@ -122,12 +132,10 @@ void http_free_uri(struct http_uri *u)
 	u->path = NULL;
 }
 
-
 int http_open(struct http_get *hg, int timeout_ms)
 {
 	const struct addrinfo hints = {
 		.ai_socktype = SOCK_STREAM
-		//.ai_socktype = SOCK_DGRAM
 	};
 	struct addrinfo *result;
 	union {
@@ -139,11 +147,13 @@ int http_open(struct http_get *hg, int timeout_ms)
 	int save, flags, rc;
 	char port[16];
 
-	char *proxy = (char *)getenv("http_proxy");
+	char *proxy = getenv("http_proxy");
 	if (proxy) {
-        hg->proxy = calloc(1, sizeof(struct http_uri));
-        printf("Failed to parse HTTP proxy URI '%s'\n", proxy);
-        return -1;
+		hg->proxy = xnew(struct http_uri, 1);
+		if (http_parse_uri(proxy, hg->proxy)) {
+			d_print("Failed to parse HTTP proxy URI '%s'\n", proxy);
+			return -1;
+		}
 	} else {
 		hg->proxy = NULL;
 	}
@@ -151,7 +161,7 @@ int http_open(struct http_get *hg, int timeout_ms)
 	snprintf(port, sizeof(port), "%d", hg->proxy ? hg->proxy->port : hg->uri.port);
 	rc = getaddrinfo(hg->proxy ? hg->proxy->host : hg->uri.host, port, &hints, &result);
 	if (rc != 0) {
-		printf("getaddrinfo: %s\n", gai_strerror(rc));
+		d_print("getaddrinfo: %s\n", gai_strerror(rc));
 		return -1;
 	}
 	memcpy(&addr.sa, result->ai_addr, result->ai_addrlen);
@@ -159,7 +169,6 @@ int http_open(struct http_get *hg, int timeout_ms)
 	freeaddrinfo(result);
 
 	hg->fd = socket(addr.sa.sa_family, SOCK_STREAM, 0);
-	//hg->fd = socket(addr.sa.sa_family, SOCK_DGRAM, 0);
 	if (hg->fd == -1)
 		return -1;
 
@@ -172,11 +181,9 @@ int http_open(struct http_get *hg, int timeout_ms)
 	while (1) {
 		fd_set wfds;
 
-		printf("connecting. timeout=%lld s %lld us\n", (long long)tv.tv_sec, (long long)tv.tv_usec);
-		if (connect(hg->fd, &addr.sa, addrlen) == 0) {
-            printf("haha, connected\n");
+		d_print("connecting. timeout=%lld s %lld us\n", (long long)tv.tv_sec, (long long)tv.tv_usec);
+		if (connect(hg->fd, &addr.sa, addrlen) == 0)
 			break;
-        }
 		if (errno == EISCONN)
 			break;
 		if (errno != EAGAIN && errno != EINPROGRESS)
@@ -185,7 +192,6 @@ int http_open(struct http_get *hg, int timeout_ms)
 		FD_ZERO(&wfds);
 		FD_SET(hg->fd, &wfds);
 		while (1) {
-            printf("cannt connect, ok i select first\n");
 			rc = select(hg->fd + 1, NULL, &wfds, NULL, &tv);
 			if (rc == -1) {
 				if (errno != EINTR)
@@ -195,7 +201,6 @@ int http_open(struct http_get *hg, int timeout_ms)
 			}
 			if (rc == 1) {
 				/* socket ready */
-                printf("haha, ready to connect\n");
 				break;
 			}
 			if (tv.tv_sec == 0 && tv.tv_usec == 0) {
@@ -208,13 +213,53 @@ int http_open(struct http_get *hg, int timeout_ms)
 	/* restore old flags */
 	if (fcntl(hg->fd, F_SETFL, flags) == -1)
 		goto close_exit;
-
 	return 0;
 close_exit:
 	save = errno;
 	close(hg->fd);
 	errno = save;
 	return -1;
+}
+
+static int http_write(int fd, const char *buf, int count, int timeout_ms)
+{
+	struct timeval tv;
+	int pos = 0;
+
+	tv.tv_sec = timeout_ms / 1000;
+	tv.tv_usec = (timeout_ms % 1000) * 1000;
+	while (1) {
+		fd_set wfds;
+		int rc;
+
+		d_print("timeout=%lld s %lld us\n", (long long)tv.tv_sec, (long long)tv.tv_usec);
+        d_print("---req---\n%s\n---end---\n", buf);
+        printf("---req---\n%s\n---end---\n", buf);
+
+		FD_ZERO(&wfds);
+		FD_SET(fd, &wfds);
+		rc = select(fd + 1, NULL, &wfds, NULL, &tv);
+		if (rc == -1) {
+			if (errno != EINTR)
+				return -1;
+			/* signalled */
+			continue;
+		}
+		if (rc == 1) {
+			rc = write(fd, buf + pos, count - pos);
+			if (rc == -1) {
+				if (errno == EINTR || errno == EAGAIN)
+					continue;
+				return -1;
+			}
+			pos += rc;
+			if (pos == count)
+				return 0;
+		} else if (tv.tv_sec == 0 && tv.tv_usec == 0) {
+			errno = ETIMEDOUT;
+			return -1;
+		}
+	}
 }
 
 static int read_timeout(int fd, int timeout_ms)
@@ -246,8 +291,7 @@ static int read_timeout(int fd, int timeout_ms)
 }
 
 /* reads response, ignores fscking carriage returns */
-//static int http_read_response(int fd, struct gbuf *buf, int timeout_ms)
-static int http_read_response(int fd, int timeout_ms)
+static int http_read_response(int fd, struct gbuf *buf, int timeout_ms)
 {
 	char prev = 0;
 
@@ -268,87 +312,210 @@ static int http_read_response(int fd, int timeout_ms)
 			continue;
 		if (ch == '\n' && prev == '\n')
 			return 0;
-		putchar(ch);
+		gbuf_add_ch(buf, ch);
 		prev = ch;
 	}
 }
 
-static int http_write(int fd, const char *buf, int count, int timeout_ms)
+static int http_parse_response(char *str, struct http_get *hg)
 {
-	struct timeval tv;
-	int pos = 0;
+	/* str is 0 terminated buffer of lines
+	 * every line ends with '\n'
+	 * no carriage returns
+	 * no empty lines
+	 */
+	GROWING_KEYVALS(h);
+	char *end;
 
-	tv.tv_sec = timeout_ms / 1000;
-	tv.tv_usec = (timeout_ms % 1000) * 1000;
+	if (strncmp(str, "HTTP/", 5) == 0) {
+		str += 5;
+		while (*str != ' ') {
+			if (*str == '\n') {
+				return -2;
+			}
+			str++;
+		}
+	} else if (strncmp(str, "ICY", 3) == 0) {
+		str += 3;
+	} else {
+		return -2;
+	}
+	while (*str == ' ')
+		str++;
+
+	hg->code = 0;
+	while (*str >= '0' && *str <= '9') {
+		hg->code *= 10;
+		hg->code += *str - '0';
+		str++;
+	}
+	if (!hg->code)
+		return -2;
+	while (*str == ' ')
+		str++;
+
+	end = strchr(str, '\n');
+	hg->reason = xstrndup(str, end - str);
+	str = end + 1;
+
+	/* headers */
+	while (*str) {
+		char *ptr;
+
+		end = strchr(str, '\n');
+		ptr = strchr(str, ':');
+		if (ptr == NULL || ptr > end) {
+			free(hg->reason);
+			hg->reason = NULL;
+			keyvals_terminate(&h);
+			keyvals_free(h.keyvals);
+			return -2;
+		}
+
+		*ptr++ = 0;
+		while (*ptr == ' ')
+			ptr++;
+
+		keyvals_add(&h, str, xstrndup(ptr, end - ptr));
+		str = end + 1;
+	}
+	keyvals_terminate(&h);
+	hg->headers = h.keyvals;
+	return 0;
+}
+
+int http_get(struct http_get *hg, struct keyval *headers, int timeout_ms)
+{
+	GBUF(buf);
+	int i, rc, save;
+
+	gbuf_add_str(&buf, "GET ");
+	gbuf_add_str(&buf, hg->proxy ? hg->uri.uri : hg->uri.path);
+	gbuf_add_str(&buf, " HTTP/1.0\r\n");
+	for (i = 0; headers[i].key; i++) {
+		gbuf_add_str(&buf, headers[i].key);
+		gbuf_add_str(&buf, ": ");
+		gbuf_add_str(&buf, headers[i].val);
+		gbuf_add_str(&buf, "\r\n");
+	}
+	gbuf_add_str(&buf, "\r\n");
+
+	rc = http_write(hg->fd, buf.buffer, buf.len, timeout_ms);
+	if (rc)
+		goto out;
+
+	gbuf_clear(&buf);
+	rc = http_read_response(hg->fd, &buf, timeout_ms);
+	if (rc)
+		goto out;
+
+    d_print("---rsp---\n%s---end---\n", buf.buffer);
+    printf("---rsp---\n%s---end---\n", buf.buffer);
+
+	rc = http_parse_response(buf.buffer, hg);
+out:
+	save = errno;
+	gbuf_free(&buf);
+	errno = save;
+	return rc;
+}
+
+char *http_read_body(int fd, size_t *size, int timeout_ms)
+{
+	GBUF(buf);
+
+	if (read_timeout(fd, timeout_ms))
+		return NULL;
 	while (1) {
-		fd_set wfds;
+		int count = 1023;
 		int rc;
 
-		printf("timeout=%lld s %lld us\n", (long long)tv.tv_sec, (long long)tv.tv_usec);
-
-		FD_ZERO(&wfds);
-		FD_SET(fd, &wfds);
-		rc = select(fd + 1, NULL, &wfds, NULL, &tv);
+		gbuf_grow(&buf, count);
+		rc = read_all(fd, buf.buffer + buf.len, count);
 		if (rc == -1) {
-			if (errno != EINTR)
-				return -1;
-			/* signalled */
-			continue;
+			gbuf_free(&buf);
+			return NULL;
 		}
-		if (rc == 1) {
-            printf("writing...\n");
-			rc = write(fd, buf + pos, count - pos);
-			if (rc == -1) {
-				if (errno == EINTR || errno == EAGAIN)
-					continue;
-				return -1;
-			}
-			pos += rc;
-			if (pos == count) {
-                printf("return\n");
-				return 0;
-            }
-		} else if (tv.tv_sec == 0 && tv.tv_usec == 0) {
-			errno = ETIMEDOUT;
-			return -1;
+		buf.len += rc;
+		if (rc == 0) {
+			*size = buf.len;
+			return gbuf_steal(&buf);
 		}
 	}
 }
 
 void http_get_free(struct http_get *hg)
 {
-    http_free_uri(&hg->uri);
-    if (hg->proxy) {
-        http_free_uri(hg->proxy);
-        free(hg->proxy);
-    }
-
-    free(hg->reason);
+	http_free_uri(&hg->uri);
+	if (hg->proxy) {
+		http_free_uri(hg->proxy);
+		free(hg->proxy);
+	}
+	if (hg->headers)
+		keyvals_free(hg->headers);
+	free(hg->reason);
 }
 
-int main(void)
+char *base64_encode(const char *str)
 {
-    struct http_get *hg = (struct http_get *)calloc(1, sizeof(struct http_get));
-    //hg->uri.host = "localhost";
-    //hg->uri.port = 5000;
-    
-    //hg->uri.host = "www.baidu.com";
-    //hg->uri.port = 80;
+	static const char t[64] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+	int str_len, buf_len, i, s, d;
+	char *buf;
+	unsigned char b0, b1, b2;
 
-    //const char *uri = "http://www.baidu.com/index.php?tn=10018801_hao";
-    const char *uri = "http://www.taobao.com/";
+	str_len = strlen(str);
+	buf_len = (str_len + 2) / 3 * 4 + 1;
+	buf = xnew(char, buf_len);
+	s = 0;
+	d = 0;
+	for (i = 0; i < str_len / 3; i++) {
+		b0 = str[s++];
+		b1 = str[s++];
+		b2 = str[s++];
 
-    http_parse_uri(uri, &hg->uri);
+		/* 6 ms bits of b0 */
+		buf[d++] = t[b0 >> 2];
 
-    printf("%s, port %d, path %s\n", hg->uri.host, hg->uri.port, hg->uri.path);
+		/* 2 ls bits of b0 . 4 ms bits of b1 */
+		buf[d++] = t[((b0 << 4) | (b1 >> 4)) & 0x3f];
 
-    http_open(hg, 5000);
+		/* 4 ls bits of b1 . 2 ms bits of b2 */
+		buf[d++] = t[((b1 << 2) | (b2 >> 6)) & 0x3f];
 
-    char buf[] = "GET HTTP/1.0\r\n\r\n";
+		/* 6 ls bits of b2 */
+		buf[d++] = t[b2 & 0x3f];
+	}
+	switch (str_len % 3) {
+	case 2:
+		b0 = str[s++];
+		b1 = str[s++];
 
-    http_write(hg->fd, buf, sizeof(buf), 5000);
-    http_read_response(hg->fd, 5000);
+		/* 6 ms bits of b0 */
+		buf[d++] = t[b0 >> 2];
 
-    http_get_free(hg);
-    return 0;
+		/* 2 ls bits of b0 . 4 ms bits of b1 */
+		buf[d++] = t[((b0 << 4) | (b1 >> 4)) & 0x3f];
+
+		/* 4 ls bits of b1 */
+		buf[d++] = t[(b1 << 2) & 0x3f];
+
+		buf[d++] = '=';
+		break;
+	case 1:
+		b0 = str[s++];
+
+		/* 6 ms bits of b0 */
+		buf[d++] = t[b0 >> 2];
+
+		/* 2 ls bits of b0 */
+		buf[d++] = t[(b0 << 4) & 0x3f];
+
+		buf[d++] = '=';
+		buf[d++] = '=';
+		break;
+	case 0:
+		break;
+	}
+	buf[d++] = 0;
+	return buf;
 }
