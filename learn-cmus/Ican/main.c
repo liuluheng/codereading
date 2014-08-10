@@ -12,10 +12,8 @@ int main(void)
     op_load_plugins();
 
     op_select("pulse");
-
     player_init(NULL);
 
-    sleep(1);
     player_play();
 
     while(1)

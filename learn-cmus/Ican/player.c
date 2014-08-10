@@ -394,6 +394,30 @@ static void __FORMAT(2, 3) player_op_error(int rc, const char *format, ...)
 	free(msg);
 }
 
+static inline void metadata_changed(void)
+{
+    struct keyval *comments;
+    int rc;
+
+    player_info_lock();
+    if (ip_get_metadata(ip)) {
+        d_print("metadata changed: %s\n", ip_get_metadata(ip));
+        memcpy(player_info.metadata, ip_get_metadata(ip),
+                255 * 16 + 1);
+    }
+
+    rc = ip_read_comments(ip, &comments);
+    if (!rc) {
+        //if (player_info.ti->comments)
+        //    keyvals_free(player_info.ti->comments);
+        //track_info_set_comments(player_info.ti, comments);
+    }
+
+    player_info.metadata_changed = 1;
+    player_info_unlock();
+}
+
+
 /*
  * buffer-fill changed
  */
@@ -458,6 +482,7 @@ static void __player_status_changed(void)
 
 static void __prebuffer(void)
 {
+    printf("__prebuffer\n");
 	int limit_chunks;
 
 	BUG_ON(producer_status != PS_PLAYING);
@@ -477,7 +502,7 @@ static void __prebuffer(void)
 		char *wpos;
 
 		filled = buffer_get_filled_chunks();
-/* 		d_print("PREBUF: %2d / %2d\n", filled, limit_chunks); */
+ 		/*d_print("PREBUF: %2d / %2d\n", filled, limit_chunks);*/
 
 		/* not fatal */
 		//BUG_ON(filled > limit_chunks);
@@ -495,7 +520,7 @@ static void __prebuffer(void)
 			nr_read = 0;
 		}
 		if (ip_metadata_changed(ip))
-			//metadata_changed();
+			metadata_changed();
 
 		/* buffer_fill with 0 count marks current chunk filled */
 		buffer_fill(nr_read);
@@ -720,17 +745,12 @@ static void *consumer_loop(void *arg)
 		char *rpos;
 
 		consumer_lock();
-    printf("consumer_lock %d\n", consumer_running);
-        printf("consumer status %d\n", consumer_status);
-        sleep(1);
 		if (!consumer_running)
 			break;
 
 		if (consumer_status == CS_PAUSED || consumer_status == CS_STOPPED) {
-    printf("consumer_cond_wait, status %d\n", consumer_status);
 			pthread_cond_wait(&consumer_playing, &consumer_mutex);
 			consumer_unlock();
-    printf("consumer_unlock, status %d\n", consumer_status);
 			continue;
 		}
 		space = op_buffer_space();
@@ -750,7 +770,6 @@ static void *consumer_loop(void *arg)
 
 		while (1) {
 			if (space == 0) {
-                printf("space 0\n");
 				__consumer_position_update();
 				consumer_unlock();
 				ms_sleep(25);
@@ -773,7 +792,6 @@ static void *consumer_loop(void *arg)
 						__consumer_handle_eof();
 						producer_unlock();
 						consumer_unlock();
-                printf("space not 0\n");
 						break;
 					} else {
 						/* possible underrun */
@@ -813,13 +831,11 @@ static void *consumer_loop(void *arg)
 	}
 	__consumer_stop();
 	consumer_unlock();
-    printf("consumer_loop end\n");
 	return NULL;
 }
 
 static void *producer_loop(void *arg)
 {
-    printf("producer_loop\n");
 	while (1) {
 		/* number of chunks to fill
 		 * too big   => seeking is slow
@@ -830,23 +846,19 @@ static void *producer_loop(void *arg)
 		char *wpos;
 
 		producer_lock();
-        printf("producer_lock %d\n", producer_running);
 		if (!producer_running)
 			break;
 
 		if (producer_status == PS_UNLOADED ||
 		    producer_status == PS_PAUSED ||
 		    producer_status == PS_STOPPED || ip_eof(ip)) {
-    printf("producer_cond_wait, status %d\n", producer_status);
             int ret;
 			ret = pthread_cond_wait(&producer_playing, &producer_mutex);
             BUG_ON(ret);
 			producer_unlock();
-            printf("producer_unlock, status %d\n", producer_status);
 			continue;
 		}
 		for (i = 0; ; i++) {
-            printf("go here in for\n");
 			size = buffer_get_wpos(&wpos);
 			if (size == 0) {
 				/* buffer is full */
@@ -868,7 +880,7 @@ static void *producer_loop(void *arg)
 				}
 			}
 			if (ip_metadata_changed(ip))
-				//metadata_changed();
+				metadata_changed();
 
 			/* buffer_fill with 0 count marks current chunk filled */
 			buffer_fill(nr_read);
@@ -889,7 +901,6 @@ static void *producer_loop(void *arg)
 
 	__producer_unload();
 	producer_unlock();
-    printf("producer_loop end\n");
 	return NULL;
 }
 
