@@ -73,7 +73,8 @@ struct ip {
 	const char * const *options;
 };
 
-static const char * const plugin_dir = LIBDIR "/cmus/ip";
+//static const char * const plugin_dir = LIBDIR "/cmus/ip";
+static const char * const plugin_dir = "./ip";
 static LIST_HEAD(ip_head);
 
 /* timeouts (ms) */

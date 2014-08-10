@@ -36,7 +36,8 @@ struct output_plugin {
 	unsigned int mixer_open : 1;
 };
 
-static const char * const plugin_dir = LIBDIR "/cmus/op";
+//static const char * const plugin_dir = LIBDIR "/cmus/op";
+static const char * const plugin_dir = "./op";
 static LIST_HEAD(op_head);
 static struct output_plugin *op = NULL;
 

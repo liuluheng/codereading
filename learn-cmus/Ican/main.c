@@ -11,7 +11,7 @@ int main(void)
     ip_load_plugins();
     op_load_plugins();
 
-    op_select("pulse");
+    op_select_any();
     player_init(NULL);
 
     player_play();
