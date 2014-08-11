@@ -11,6 +11,11 @@ char *get_current_dir_name(void);//????
 
 #if DEBUG > 1
 static FILE *debug_stream = NULL;
+static void init_streams(void) __attribute__((constructor)); 
+static void init_streams(void)
+{
+    debug_stream = stderr;
+}
 #endif
 
 void debug_init(void)
