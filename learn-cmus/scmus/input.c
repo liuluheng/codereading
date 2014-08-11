@@ -457,7 +457,7 @@ void ip_load_plugins(void)
 
         printf("find dll %s\n", filename);
 
-		so = dlopen(filename, RTLD_LAZY);
+		so = dlopen(filename, RTLD_NOW);
 		if (so == NULL) {
 			printf("%s: %s\n", filename, dlerror());
 			d_print("%s: %s\n", filename, dlerror());

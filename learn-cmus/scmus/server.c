@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <unistd.h>
 
 #define BUF_SIZE 500
 
@@ -13,7 +14,8 @@ int main(int argc, char *argv[])
 
     struct addrinfo *result, *rp;
     struct sockaddr_storage peer_addr; 
-    int sfd, s, nread, peer_addr_len;
+    int sfd, s, nread; 
+    socklen_t peer_addr_len;
     char buf[BUF_SIZE];
 
     memset(&hints, 0, sizeof(struct addrinfo));

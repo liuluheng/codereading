@@ -417,7 +417,6 @@ static inline void metadata_changed(void)
     player_info_unlock();
 }
 
-
 /*
  * buffer-fill changed
  */
