@@ -88,7 +88,7 @@ void op_load_plugins(void)
 
 		snprintf(filename, sizeof(filename), "%s/%s", plugin_dir, d->d_name);
 
-		so = dlopen(filename, RTLD_NOW);
+		so = dlopen(filename, RTLD_LAZY);
 		if (so == NULL) {
 			printf("%s: %s\n", filename, dlerror());
 			d_print("%s: %s\n", filename, dlerror());
