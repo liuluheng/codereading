@@ -725,8 +725,10 @@ static void __consumer_handle_eof(void)
 
 	if (player_repeat_current) {
 		if (player_cont) {
+            printf("handleof seek--------\n");
 			ip_seek(ip, 0);
 			reset_buffer();
+            printf("handleof seek--------end\n");
 		} else {
 			__producer_stop();
 			__consumer_drain_and_stop();
@@ -738,7 +740,6 @@ static void __consumer_handle_eof(void)
 
 static void *consumer_loop(void *arg)
 {
-    printf("consumer_loop\n");
 	while (1) {
 		int rc, space;
 		int size;
@@ -786,14 +787,17 @@ static void *consumer_loop(void *arg)
 				/* must recheck rpos */
 				size = buffer_get_rpos(&rpos);
 				if (size == 0) {
+                    printf("888888888888");
 					/* OK. now it's safe to check if we are at EOF */
 					if (ip_eof(ip)) {
+                    printf("999888888888");
 						/* EOF */
 						__consumer_handle_eof();
 						producer_unlock();
 						consumer_unlock();
 						break;
 					} else {
+                    printf("999000000000");
 						/* possible underrun */
 						producer_unlock();
 						__consumer_position_update();

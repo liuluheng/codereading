@@ -7,11 +7,7 @@ LD = clang
 
 CFLAGS  = -g -O2 -Wall -DHAVE_CONFIG -DREALTIME_SCHEDULING -DVERSION=\"$(VERSION)\" -D_REENTRANT
 
-LDFLAGS =  -ldl -lpthread -lm -lncurses\
-		   /usr/local/lib/cmus/ip/mad.so\
-		   /usr/local/lib/cmus/op/pulse.so\
-		   #/usr/local/lib/cmus/op/roar.so\
-		   #/usr/local/lib/cmus/op/ao.so
+LDFLAGS =  -ldl -lpthread -lm -lncurses
 
 main.o server.o: CFLAGS += -DDEFAULT_PORT=3000
 
