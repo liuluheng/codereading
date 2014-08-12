@@ -11,6 +11,8 @@ char *get_current_dir_name(void);//????
 
 #if DEBUG > 1
 static FILE *debug_stream = NULL;
+
+//http://stackoverflow.com/questions/7623735/error-initializer-element-is-not-constant
 static void init_streams(void) __attribute__((constructor)); 
 static void init_streams(void)
 {
