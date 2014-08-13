@@ -32,7 +32,7 @@ void debug_init(void)
 		if (!dir)
 			die("error: environment variable HOME not set\n");
 	}
-	snprintf(filename, sizeof(filename), "%s/cmus-debug.txt", dir);
+	snprintf(filename, sizeof(filename), "%s/scmus-debug.txt", dir);
 
 	debug_stream = fopen(filename, "w");
 	if (debug_stream == NULL)

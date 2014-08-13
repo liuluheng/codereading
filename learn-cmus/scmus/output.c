@@ -219,9 +219,7 @@ int op_select_any(void)
 		rc = select_plugin(o);
 		if (rc != 0)
 			continue;
-        printf("11\n");
 		rc = o->pcm_ops->open(sf, NULL);
-        printf("11 %d\n", rc);
 		if (rc == 0) {
 			o->pcm_ops->close();
 			break;
@@ -234,7 +232,6 @@ int op_open(sample_format_t sf, const channel_position_t *channel_map)
 {
 	if (op == NULL)
 		return -OP_ERROR_NOT_INITIALIZED;
-    printf("1\n");
 	return op->pcm_ops->open(sf, channel_map);
 }
 

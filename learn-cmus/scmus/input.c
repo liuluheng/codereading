@@ -455,11 +455,8 @@ void ip_load_plugins(void)
 
 		snprintf(filename, sizeof(filename), "%s/%s", plugin_dir, d->d_name);
 
-        printf("find dll %s\n", filename);
-
 		so = dlopen(filename, RTLD_NOW);
 		if (so == NULL) {
-			printf("%s: %s\n", filename, dlerror());
 			d_print("%s: %s\n", filename, dlerror());
 			continue;
 		}
@@ -488,7 +485,7 @@ void ip_load_plugins(void)
 
 	struct ip *ip;
 	list_for_each_entry(ip, &ip_head, node) {
-        printf("ip->name %s\n", ip->name);
+        d_print("ip->name %s\n", ip->name);
     }
     
 	closedir(dir);
@@ -529,7 +526,6 @@ int ip_open(struct input_plugin *ip)
 			ip->ops = get_ops_by_mime_type("application/x-cue");
 			rc = ip->ops ? ip->ops->open(&ip->data) : 1;
 		} else
-            printf("open file...\n");
 			rc = open_file(ip);
 	}
 
@@ -648,7 +644,7 @@ int ip_read(struct input_plugin *ip, char *buffer, int count)
 
 int ip_seek(struct input_plugin *ip, double offset)
 {
-    printf("seek\n" );
+    d_print("seek\n" );
 	int rc;
 
 	if (ip->data.remote)
@@ -656,7 +652,7 @@ int ip_seek(struct input_plugin *ip, double offset)
 	rc = ip->ops->seek(&ip->data, offset);
 	if (rc == 0)
 		ip->eof = 0;
-    printf("seek return %d\n", rc);
+    d_print("seek return %d\n", rc);
 	return rc;
 }
 

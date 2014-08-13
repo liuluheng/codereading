@@ -44,5 +44,4 @@ clean:
 realclean: clean
 	rm -f scmus
 	
-
 .PHONY: all realclean clean

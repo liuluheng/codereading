@@ -19,6 +19,7 @@
 #include "read_wrapper.h"
 #include "ip.h"
 #include "file.h"
+#include "debug.h"
 
 #include <unistd.h>
 
@@ -31,6 +32,7 @@ ssize_t read_wrapper(struct input_plugin_data *ip_data, void *buffer, size_t cou
 		return read(ip_data->fd, buffer, count);
 	}
 
+    d_print("counter %d, metaint %d\n", ip_data->counter, ip_data->metaint);
 	if (ip_data->counter == ip_data->metaint) {
 		/* read metadata */
 		unsigned char byte;
@@ -52,6 +54,7 @@ ssize_t read_wrapper(struct input_plugin_data *ip_data, void *buffer, size_t cou
 				return 0;
 			}
 			ip_data->metadata[len] = 0;
+            d_print("metadata_changed, len %d\n", len);
 			ip_data->metadata_changed = 1;
 		}
 		ip_data->counter = 0;

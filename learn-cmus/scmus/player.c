@@ -481,7 +481,6 @@ static void __player_status_changed(void)
 
 static void __prebuffer(void)
 {
-    printf("__prebuffer\n");
 	int limit_chunks;
 
 	BUG_ON(producer_status != PS_PLAYING);
@@ -501,13 +500,14 @@ static void __prebuffer(void)
 		char *wpos;
 
 		filled = buffer_get_filled_chunks();
- 		/*d_print("PREBUF: %2d / %2d\n", filled, limit_chunks);*/
+ 		//d_print("PREBUF: %2d / %2d\n", filled, limit_chunks);
 
 		/* not fatal */
 		//BUG_ON(filled > limit_chunks);
 
-		if (filled >= limit_chunks)
+		if (filled >= limit_chunks) {
 			break;
+        }
 
 		size = buffer_get_wpos(&wpos);
 		nr_read = ip_read(ip, wpos, size);
@@ -724,10 +724,8 @@ static void __consumer_handle_eof(void)
 
 	if (player_repeat_current) {
 		if (player_cont) {
-            printf("handleof seek--------\n");
 			ip_seek(ip, 0);
 			reset_buffer();
-            printf("handleof seek--------end\n");
 		} else {
 			__producer_stop();
 			__consumer_drain_and_stop();
@@ -786,17 +784,14 @@ static void *consumer_loop(void *arg)
 				/* must recheck rpos */
 				size = buffer_get_rpos(&rpos);
 				if (size == 0) {
-                    printf("888888888888");
 					/* OK. now it's safe to check if we are at EOF */
 					if (ip_eof(ip)) {
-                    printf("999888888888");
 						/* EOF */
 						__consumer_handle_eof();
 						producer_unlock();
 						consumer_unlock();
 						break;
 					} else {
-                    printf("999000000000");
 						/* possible underrun */
 						producer_unlock();
 						__consumer_position_update();
@@ -882,8 +877,10 @@ static void *producer_loop(void *arg)
 					break;
 				}
 			}
-			if (ip_metadata_changed(ip))
+			if (ip_metadata_changed(ip)) {
+                d_print("-----------ip_metadata_changed----------\n");
 				metadata_changed();
+            }
 
 			/* buffer_fill with 0 count marks current chunk filled */
 			buffer_fill(nr_read);
