@@ -7,7 +7,7 @@ This repository is some open source code I'm reading in my spare time, and I hav
 `cmus` 's code is really good-writting, and it observes the Linux Kernel coding style, 
     I think it could be the **model** of how C code should be written.
     
-`learn-cmus/scmus` is a small music player I extract from cmus. It's all about how music came out .:smile:
+`learn-cmus/scmus` is a small music player I extract from cmus. It's all about how music came out. It plays only one song over and over.:smile:
 
 ##lemon
 `lemon` is a LALR(1) grammar parser generator, only about 5000 lines code, and it has been applied to the real production.
