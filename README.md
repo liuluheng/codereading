@@ -8,7 +8,7 @@ This repository is some open source code I'm reading in my spare time, and I hav
     I think it could be the **model** of how C code should be written.
 
 
-** [scmus](https://github.com/liuluheng/codereading/tree/master/learn-cmus/scmus)    
+*[scmus](https://github.com/liuluheng/codereading/tree/master/learn-cmus/scmus)    
 `learn-cmus/scmus` is a small music player I extract from cmus. It's all about how music came out. It was implemented as playing only one song over and over. If you curious about how music is played, you can have a look.:smile:
 
 ## lemon
