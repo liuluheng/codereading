@@ -518,8 +518,10 @@ static void __prebuffer(void)
 			/* ip_read sets eof */
 			nr_read = 0;
 		}
-		if (ip_metadata_changed(ip))
-			metadata_changed();
+        if (ip_metadata_changed(ip)) {
+            d_print("-----------ip_metadata_changed----------\n");
+            metadata_changed();
+        }
 
 		/* buffer_fill with 0 count marks current chunk filled */
 		buffer_fill(nr_read);
