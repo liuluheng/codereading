@@ -15,4 +15,7 @@ This repository is some open source code I'm reading in my spare time, and I hav
 `lemon` is a LALR(1) grammar parser generator, only about 5000 lines code, and it has been applied to the real production.
 I think it's worth reading for who want to know LALR(1). Athough its code style is not so tasty, actually it's not that hard..:smile:
 
+## leveldb
+`leveldb` is a recommended to read by many people since the authors reputation and its good google coding style, my reading tracks is in leveldb/learn.
+actually I have spend more than two months on reading the source code try to understand how it works.
 
