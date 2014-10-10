@@ -3,7 +3,7 @@
 This repository is some open source code I'm reading in my spare time, and I have added some test codes to learn the structures of these projects.
 
 ## [cmus](https://github.com/liuluheng/cmus)
-`cmus` is a music player written in C. I'm interesting about how the music wave came out, so I got this read. 
+`cmus` is a music player written in C. I'm interested about how the music wave came out, so I got this read. 
 `cmus` 's code is really good-writting, and it uses [Linux kernel coding style](http://www.kernel.org/doc/Documentation/CodingStyle), 
     I think it could be the **model** of how C code should be written.
 
@@ -16,6 +16,6 @@ This repository is some open source code I'm reading in my spare time, and I hav
 I think it's worth reading for who want to know LALR(1). Athough its code style is not so tasty, actually it's not that hard..:smile:
 
 ## leveldb
-`leveldb` is a recommended to read by many people since the authors reputation and its good google coding style, my reading tracks is in leveldb/learn.
-actually I have spend more than two months on reading the source code try to understand how it works.
+`leveldb` is recommended to read by many people since the authors' reputation and its good google coding style, my reading tracks is in leveldb/learn.
+Actually I have spent more than two months on reading the source code trying to understand how it works.
 
